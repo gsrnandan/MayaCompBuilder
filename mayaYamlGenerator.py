@@ -1,6 +1,9 @@
 import maya.cmds as cmds
 import pymel.core as pm
+import yaml
+import operator
 
+filepath = "/homes/govindaluris/Documents/layerOrder.yaml"
 def getCamDistancePerFrame(shotCam,asset):
     cam = pm.PyNode(shotCam)
     cam_normal =  cam.getAttr('worldMatrix').transpose() * pm.dt.Vector([0,0,-1])
@@ -16,9 +19,9 @@ def getMinimumCamDistance(shotCam,asset):
     playbackEndTime    = int(cmds.playbackOptions(query=True, max=True))
     curTime = playbackStartTime
     distanceList = []
-    for i in range(playbackStartTime,playbackEndTime):
-        curTime = cmds.currentTime( curTime+1, edit=True )
-        distanceList.append(getCamDistancePerFrame(shotCam,asset))
+    #for i in range(playbackStartTime,playbackEndTime):
+        #curTime = cmds.currentTime( curTime+1, edit=True )
+    distanceList.append(getCamDistancePerFrame(shotCam,asset))
     return min(distanceList)
     
 def getLayerOrder():
@@ -27,6 +30,7 @@ def getLayerOrder():
     renderLayers = getRenderLayers()
     renderLayers.remove('defaultRenderLayer')
     for renderLayer in renderLayers:
+        print renderLayer
         objectsInLayer = getRenderLayerObjects(renderLayer)
         minDistance = []
         for object in objectsInLayer:
@@ -34,8 +38,30 @@ def getLayerOrder():
                 print object
                 minDistance.append(getMinimumCamDistance(shotCam,object))
         minDistanceOfLayer = min(minDistance)
-        layerOrder[renderLayer] = minDistanceOfLayer
-    print layerOrder
+        layerOrder[str(renderLayer)] = minDistanceOfLayer
+        var = sorted(layerOrder.items(), key=lambda x: x[1],reverse=True)
+        layerOrderedList = [x[0] for x in var]
+        print layerOrderedList
+    setFormatForYaml(layerOrderedList)
+    
+    
+def setFormatForYaml(orderedList):
+    Layers = {}
+    Envir_layers = []
+    Char_layers = []
+    for layer in orderedList:
+        if 'Envir' in layer:
+            Envir_layers.append(layer)
+        else:
+            Char_layers.append(layer)
+    Layers.update({'ENVIR':Envir_layers})
+    Layers.update({'CHAR':Char_layers})
+    writeYamlFile(Layers,filepath)
+    print Layers
+
+def writeYamlFile(layerOrder,filepath):
+    with open(filepath,"w") as file_descriptor:
+        yaml.dump(layerOrder,file_descriptor,default_flow_style=False)
                                  
 def getFrameRange():
     frameRange = [cmds.getAttr('defaultRenderGlobals.startFrame'),cmds.getAttr('defaultRenderGlobals.endFrame')]
