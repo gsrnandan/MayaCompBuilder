@@ -1,0 +1,45 @@
+import yaml
+
+m_YamlPath = '/homes/govindaluris/Documents/layerOrder.yaml'
+m_nukeTemplatePath = '/homes/govindaluris/Documents/nuke/'
+
+"Reading the yaml file"
+with open(m_YamlPath,'r') as stream:
+    layers = yaml.load(stream)
+    print layers
+
+charLayers = []
+envirLayers = []
+fxLayers = []
+miscLayers = []
+
+def formatLayerNames(layers):
+    formattedLayers = []
+    for layer in layers:
+        formattedLayers.append(layer.split('_')[-1])
+    return formattedLayers
+
+for key in layers:
+    if key.lower() == "char":
+        charLayers = layers[key]
+    elif key.lower() == "envir":
+        envirLayers = layers[key]
+    elif key.lower() == "fx":
+        fxLayers = layers[key]
+    else:
+        miscLayers = layers[key]
+
+def createTemplates(layers,type):
+    fLayers = formatLayerNames(layers)
+    nukePath = m_nukeTemplatePath + type.lower() + ".nk"
+
+print (charLayers,envirLayers,miscLayers)
+
+
+        
+        
+
+
+m_menu = nuke.menu('Nuke').addMenu('Comp Build')
+m_menu.addCommand('Build Shot','nuke.message("Hi")')
+m_menu.addCommand('ENVIR','nuke.message("Hello")')
